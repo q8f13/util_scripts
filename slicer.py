@@ -1,4 +1,12 @@
 # -*- coding: utf-8 -*- 
+# slice image into tiles
+# based on PIL and image_slicer
+# params:
+#   1: filename
+#   2: count of tiles
+#
+# IMPORTANT: NEED A FOLDER NAMED 'Sliced' IN THE SAME DIRECTOR
+
 import image_slicer
 import os, sys
 

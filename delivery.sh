@@ -1,3 +1,10 @@
+# script for manipulating files
+# param: target directory
+# example:
+#	filename: foo2_5bar.jpg
+#	then check and create a folder named '2'
+#	and move the file into it
+
 dir=$1
 for file in `ls $1`
 do
