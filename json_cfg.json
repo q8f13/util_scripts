@@ -1,6 +1,7 @@
 {
   "alpha_open":
   {
-    "open":false
+    "open":true,
+    "version":0.1
   }
 }
