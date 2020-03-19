@@ -27,7 +27,7 @@ def get_page(url):
 		url=url.replace('/my/m/music', '')
 		print('url changed to %s' % url)
 
-	is_playlist=bool('playlist' in url)
+	is_playlist=bool('playlist' in url or 'album' in url)
 
 	if is_playlist:
 		res = requests.get(url, headers=headers)
@@ -42,6 +42,7 @@ def get_page(url):
 			sys.stdout.flush()
 			if n is not data[len(data)-1]:
 				print('sleep 3 secs...')
+				sys.stdout.flush()
 				time.sleep(3.0)
 	else:
 		ff=urllib.request.urlopen(url)
@@ -61,6 +62,7 @@ def get_song(info):
 		music_link=req.headers['Location']
 		fname=(str(info[1])+'.mp3').replace('/','_')
 		print('downloading %s \n => %s' % (music_link,fname))
+		sys.stdout.flush()
 		urllib.request.urlretrieve(music_link, fname.encode('utf-8'))
 	except FileNotFoundError:
 		print('something is wrong with filename')
