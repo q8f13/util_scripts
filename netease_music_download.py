@@ -61,7 +61,7 @@ def get_song(info):
 		req = requests.get(song_url, headers=headers, allow_redirects=False)
 		music_link=req.headers['Location']
 		fname=(str(info[1])+'.mp3').replace('/','_')
-		print('downloading %s \n => %s' % (music_link,fname))
+		print('downloading %s \n => %s' % (music_link,fname.encode('utf-8')))
 		sys.stdout.flush()
 		urllib.request.urlretrieve(music_link, fname.encode('utf-8'))
 	except FileNotFoundError:
