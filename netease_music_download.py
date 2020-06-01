@@ -61,14 +61,15 @@ def get_song(info):
 		req = requests.get(song_url, headers=headers, allow_redirects=False)
 		music_link=req.headers['Location']
 		fname=(str(info[1])+'.mp3').replace('/','_').replace(':',' ')
-		print('downloading %s \n => %s' % (music_link,fname.encode('utf-8')))
-		# sys.stdout.flush()
-		urllib.request.urlretrieve(music_link, fname.encode('utf-8'))
-	except FileNotFoundError:
-		print('something is wrong with filename')
-		pass
-	except OSError:
-		print('os err exception')
-		pass
+		print('downloading %s \n => %s start' % (music_link,fname.encode('utf-8')))
+		sys.stdout.flush()
+		# urllib.request.urlretrieve(music_link, fname.encode('utf-8'))
+		md = requests.get(music_link, headers=headers).content
+		with open(fname.encode('utf-8'), 'wb') as f:
+			f.write(md)
+		print('downloading %s complete' % fname.encode('utf-8'))
+	except Exception as e:
+		print('Unexpected error:', e)
+		raise
 
 get_page(sys.argv[1])
