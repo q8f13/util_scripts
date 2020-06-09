@@ -9,6 +9,8 @@ import os
 import urllib
 import sys
 import time
+from mutagen.id3 import ID3, APIC, error
+from mutagen.mp3 import MP3
 
 headers = {
     'Referer': 'https://music.163.com/',
@@ -50,10 +52,42 @@ def get_page(url):
 		data=re.findall(r'\<title\>.*\<\/title\>',page.decode())
 		sep=[m.start() for m in re.finditer(' - ',data[0])]
 		song_title=data[0][7:sep[1]]
+		coverdom = re.findall(r'class=\"j-img\".*\>', page.decode())[0]
+		cover = coverdom[coverdom.find('data-src=')+10:-2]
+		# cover = coverdom[coverdom.find('data-src=')+8:coverdom.find('\"')]
 		# print(song_title)
+		# print(page.decode())
+		print(cover)
 	
 		id=url[url.find('id=')+3:]
-		get_song((id,song_title))
+		f = get_song((id,song_title))
+		get_cover(f, cover)
+
+
+def get_cover(path, cover_path):
+	audio = MP3(path, ID3=ID3)
+	print('try getting cover image from' ,cover_path)
+	img = None
+	try:
+		img = requests.get(cover_path, headers=headers).content
+		# img = requests.get(cover_path, headers=headers).content
+	except error:
+		print(error)
+		pass
+	
+	if audio.tags == None:
+		audio.add_tags()
+	audio.tags.add(
+		APIC(
+			encoding=3,
+			mime='image/jpeg',
+			type=3,
+			desc=u'Cover',
+			data=img
+		)
+	)
+
+	audio.save()
 
 def get_song(info):
 	song_url = url+str(info[0])
@@ -71,5 +105,6 @@ def get_song(info):
 	except Exception as e:
 		print('Unexpected error:', e)
 		raise
+	return fname.encode('utf-8')
 
 get_page(sys.argv[1])
