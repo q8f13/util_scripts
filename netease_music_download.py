@@ -13,9 +13,9 @@ from mutagen.id3 import ID3, APIC, error
 from mutagen.mp3 import MP3
 
 headers = {
-    'Referer': 'https://music.163.com/',
-    "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.89 "
-                  "Safari/537.36"
+    "Referer": "https://music.163.com/",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:68.0) Gecko/20100101 Firefox/68.0",
+    "cookie":"JSESSIONID-WYYY=0mQzqffYpyykD1dP%2BWAGc4HMYvI9feCU8gIGytuTld7mn7OX42Mm9yf7h8JF2y5qs2At3fYYEB7Aq5Vz%2BAHYq35Wj7DXiJ9CCdBMhIHaENr7SFbPrirs0W%2Bf1mXG5cFpQvTKgWHBruCNy33pDgQC%2BGymwKxCEcojGaKlr%2FKQGC0CYdFD%3A1593775427643; _iuqxldmzr_=32; _ntes_nnid=8149fac49738c8f7e914d371cbf8a0b9,1590637819707; _ntes_nuid=8149fac49738c8f7e914d371cbf8a0b9; WM_NI=SFKpIwKfH0%2Butl7J2L8jAMojUsxSwYE9Z4M7Xpea4GL5JRlVDNyHw0oWgrwc3U%2Bvqk7%2BmN98yHyFpK%2Bwv1OmpGzMXHBgaZxHnoZAVxu%2BRmJ9dLi5g8rdp%2FnFjjCJhwVqT1Y%3D; WM_NIKE=9ca17ae2e6ffcda170e2e6eeaff6808eeda490c16792b08aa3c54b878a8eabf460b596a485e57b9b9b85b4cd2af0fea7c3b92a919a8591cc7d89ba88d1aa7fb8b4f9abb148fcb68faeee6297adb8b4f65387e796d5d03d9cb0ab82b74d90eb86b3ef5e8892b7a9f63cad89a993f669f18be597f461f5f5a3afbc34bb98b7a7f341e9a9bad2ce67b499b6aedb4482b9afbbfb44aeb196a2d574b7f59e8ec933a894a7d6e634b2bcc0d0ed4eaab68dabeb7d96af9cd2dc37e2a3; WM_TID=LOFMCAfj6%2BpAEAFVQRJ7SWeDaGy%2Fl1K3; playerid=89565470; MUSIC_U=13ed853b271ff47be61277cccd76c83f5ad7bfae54577152b3dada19dbba5eb6a1dbc3772dc096f12b09be53347219dfbf122d59fa1ed6a2; __remember_me=true; __csrf=f61370320823b99083e35a2862db4f3c"
 }
 
 url = 'https://music.163.com/song/media/outer/url?id='
@@ -36,6 +36,8 @@ def get_page(url):
 		data = re.findall(r'\<li\>\<a href=\"\/song\?id=.*?\<\/a\>\<\/li\>', res.text)
 		print('analyzing and downloading playlist, please wait...')
 		assert(len(data)>=1)
+		print(len(data))
+		return
 		for n in data:
 			id=n[n.find('id=')+3:n.find('\">')]
 			name=n[n.find('\">')+2:n.find('</a>')]
