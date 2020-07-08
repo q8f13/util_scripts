@@ -36,8 +36,8 @@ def get_page(url):
 		data = re.findall(r'\<li\>\<a href=\"\/song\?id=.*?\<\/a\>\<\/li\>', res.text)
 		print('analyzing and downloading playlist, please wait...')
 		assert(len(data)>=1)
-		print(len(data))
-		return
+		#  print(len(data))
+		#  return
 		for n in data:
 			id=n[n.find('id=')+3:n.find('\">')]
 			name=n[n.find('\">')+2:n.find('</a>')]
