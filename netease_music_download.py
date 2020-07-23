@@ -19,6 +19,7 @@ headers = {
 }
 
 url = 'https://music.163.com/song/media/outer/url?id='
+domain = 'https://music.163.com'
 
 def get_page(url):
 	if '#' in url:
@@ -34,15 +35,14 @@ def get_page(url):
 	if is_playlist:
 		res = requests.get(url, headers=headers)
 		data = re.findall(r'\<li\>\<a href=\"\/song\?id=.*?\<\/a\>\<\/li\>', res.text)
+		# song_url_list = re.findall(r'\/song\?id=.*?\<\/a\>',res.text)
 		print('analyzing and downloading playlist, please wait...')
 		assert(len(data)>=1)
-		#  print(len(data))
-		#  return
 		for n in data:
-			id=n[n.find('id=')+3:n.find('\">')]
-			name=n[n.find('\">')+2:n.find('</a>')]
-			# print('id: %s, name: %s' % (id,name))
-			get_song((id,name))
+			start = 13
+			end = n.find("\"", 13)
+			song_url = n[start:end]
+			get_song_single(domain + song_url)
 			sys.stdout.flush()
 			if n is not data[len(data)-1]:
 				print('sleep 3 secs...')
@@ -65,6 +65,22 @@ def get_page(url):
 		f = get_song((id,song_title))
 		get_cover(f, cover)
 
+def get_song_single(url):
+	ff=urllib.request.urlopen(url)
+	page=ff.read()
+	data=re.findall(r'\<title\>.*\<\/title\>',page.decode())
+	sep=[m.start() for m in re.finditer(' - ',data[0])]
+	song_title=data[0][7:sep[1]]
+	coverdom = re.findall(r'class=\"j-img\".*\>', page.decode())[0]
+	cover = coverdom[coverdom.find('data-src=')+10:-2]
+	# cover = coverdom[coverdom.find('data-src=')+8:coverdom.find('\"')]
+	# print(song_title)
+	# print(page.decode())
+	print(cover)
+
+	id=url[url.find('id=')+3:]
+	f = get_song((id,song_title))
+	get_cover(f, cover)
 
 def get_cover(path, cover_path):
 	audio = MP3(path, ID3=ID3)
