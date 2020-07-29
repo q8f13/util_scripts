@@ -9,7 +9,7 @@ import os
 import urllib
 import sys
 import time
-from mutagen.id3 import ID3, APIC, error
+from mutagen.id3 import ID3, APIC, error, TPE1
 from mutagen.mp3 import MP3
 
 headers = {
@@ -49,28 +49,32 @@ def get_page(url):
 				sys.stdout.flush()
 				time.sleep(3.0)
 	else:
-		ff=urllib.request.urlopen(url)
-		page=ff.read()
-		data=re.findall(r'\<title\>.*\<\/title\>',page.decode())
-		sep=[m.start() for m in re.finditer(' - ',data[0])]
-		song_title=data[0][7:sep[1]]
-		coverdom = re.findall(r'class=\"j-img\".*\>', page.decode())[0]
-		cover = coverdom[coverdom.find('data-src=')+10:-2]
-		# cover = coverdom[coverdom.find('data-src=')+8:coverdom.find('\"')]
-		# print(song_title)
-		# print(page.decode())
-		print(cover)
+		get_song_single(url)
+		# ff=urllib.request.urlopen(url)
+		# page=ff.read()
+		# data=re.findall(r'\<title\>.*\<\/title\>',page.decode())
+		# sep=[m.start() for m in re.finditer(' - ',data[0])]
+		# song_title=data[0][7:sep[1]]
+		# coverdom = re.findall(r'class=\"j-img\".*\>', page.decode())[0]
+		# cover = coverdom[coverdom.find('data-src=')+10:-2]
+		# # cover = coverdom[coverdom.find('data-src=')+8:coverdom.find('\"')]
+		# # print(song_title)
+		# # print(page.decode())
+		# print(cover)
 	
-		id=url[url.find('id=')+3:]
-		f = get_song((id,song_title))
-		get_cover(f, cover)
+		# id=url[url.find('id=')+3:]
+		# f = get_song((id,song_title))
+		# get_cover(f, cover)
 
 def get_song_single(url):
 	ff=urllib.request.urlopen(url)
 	page=ff.read()
 	data=re.findall(r'\<title\>.*\<\/title\>',page.decode())
+	splited = data[0].split('-')
 	sep=[m.start() for m in re.finditer(' - ',data[0])]
-	song_title=data[0][7:sep[1]]
+	composer = splited[1]
+	song_title=data[0][7:sep[0]]
+	print(song_title)
 	coverdom = re.findall(r'class=\"j-img\".*\>', page.decode())[0]
 	cover = coverdom[coverdom.find('data-src=')+10:-2]
 	# cover = coverdom[coverdom.find('data-src=')+8:coverdom.find('\"')]
@@ -80,9 +84,9 @@ def get_song_single(url):
 
 	id=url[url.find('id=')+3:]
 	f = get_song((id,song_title))
-	get_cover(f, cover)
+	get_cover(f, cover, composer)
 
-def get_cover(path, cover_path):
+def get_cover(path, cover_path, composer):
 	audio = MP3(path, ID3=ID3)
 	print('try getting cover image from' ,cover_path)
 	img = None
@@ -101,9 +105,10 @@ def get_cover(path, cover_path):
 			mime='image/jpeg',
 			type=3,
 			desc=u'Cover',
-			data=img
+			data=img,
 		)
 	)
+	audio.tags.add(TPE1(text = composer))
 
 	audio.save()
 
@@ -112,7 +117,7 @@ def get_song(info):
 	try:
 		req = requests.get(song_url, headers=headers, allow_redirects=False)
 		music_link=req.headers['Location']
-		fname=(str(info[1])+'.mp3').replace('/','_').replace(':',' ')
+		fname=(str(info[1])+'.mp3').replace('/','_').replace(':',' ').replace('*', '')
 		print('downloading %s \n => %s start' % (music_link,fname.encode('utf-8')))
 		sys.stdout.flush()
 		# urllib.request.urlretrieve(music_link, fname.encode('utf-8'))
