@@ -1,6 +1,6 @@
 # -*- coding:utf8 -*-
 # download music from netease music
-# 2020.2.5
+# 2020.8.3
 
 import requests
 import re
@@ -9,7 +9,7 @@ import os
 import urllib
 import sys
 import time
-from mutagen.id3 import ID3, APIC, error, TPE1
+from mutagen.id3 import ID3, APIC, error, TPE1, TAL
 from mutagen.mp3 import MP3
 
 headers = {
@@ -20,6 +20,8 @@ headers = {
 
 url = 'https://music.163.com/song/media/outer/url?id='
 domain = 'https://music.163.com'
+
+ignore_exist = False
 
 def get_page(url):
 	if '#' in url:
@@ -42,51 +44,47 @@ def get_page(url):
 			start = 13
 			end = n.find("\"", 13)
 			song_url = n[start:end]
-			get_song_single(domain + song_url)
+			need_sleep = get_song_single(domain + song_url) == 1
 			sys.stdout.flush()
-			if n is not data[len(data)-1]:
+			if n is not data[len(data)-1] and need_sleep:
 				print('sleep 3 secs...')
 				sys.stdout.flush()
 				time.sleep(3.0)
 	else:
 		get_song_single(url)
-		# ff=urllib.request.urlopen(url)
-		# page=ff.read()
-		# data=re.findall(r'\<title\>.*\<\/title\>',page.decode())
-		# sep=[m.start() for m in re.finditer(' - ',data[0])]
-		# song_title=data[0][7:sep[1]]
-		# coverdom = re.findall(r'class=\"j-img\".*\>', page.decode())[0]
-		# cover = coverdom[coverdom.find('data-src=')+10:-2]
-		# # cover = coverdom[coverdom.find('data-src=')+8:coverdom.find('\"')]
-		# # print(song_title)
-		# # print(page.decode())
-		# print(cover)
-	
-		# id=url[url.find('id=')+3:]
-		# f = get_song((id,song_title))
-		# get_cover(f, cover)
 
 def get_song_single(url):
+	# open page
 	ff=urllib.request.urlopen(url)
 	page=ff.read()
+	# find title related info
 	data=re.findall(r'\<title\>.*\<\/title\>',page.decode())
 	splited = data[0].split('-')
 	sep=[m.start() for m in re.finditer(' - ',data[0])]
 	composer = splited[1]
 	song_title=data[0][7:sep[0]]
-	print(song_title)
+	# find album info
+	album_raw = re.findall(r'\<meta property="og:music:album".*\>', page.decode())
+	# <meta property="og:music:album" content="Snö">
+	album = album_raw
+	if len(album_raw) < 1:
+		print("fail to find album")
+	else:
+		equal_char_idx = album_raw[0].rfind('=')
+		album = album_raw[0][equal_char_idx+2:-3]
+		# print(album_raw[0][equal_char_idx+2:-3].encode('utf-8'))
 	coverdom = re.findall(r'class=\"j-img\".*\>', page.decode())[0]
 	cover = coverdom[coverdom.find('data-src=')+10:-2]
-	# cover = coverdom[coverdom.find('data-src=')+8:coverdom.find('\"')]
-	# print(song_title)
-	# print(page.decode())
-	print(cover)
+	# print(cover)
 
 	id=url[url.find('id=')+3:]
 	f = get_song((id,song_title))
-	get_cover(f, cover, composer)
+	if f == None:
+		return 0
+	get_cover(f, cover, composer, album)
+	return 1
 
-def get_cover(path, cover_path, composer):
+def get_cover(path, cover_path, composer, album):
 	audio = MP3(path, ID3=ID3)
 	print('try getting cover image from' ,cover_path)
 	img = None
@@ -95,7 +93,7 @@ def get_cover(path, cover_path, composer):
 		# img = requests.get(cover_path, headers=headers).content
 	except error:
 		print(error)
-		pass
+		return
 	
 	if audio.tags == None:
 		audio.add_tags()
@@ -109,6 +107,7 @@ def get_cover(path, cover_path, composer):
 		)
 	)
 	audio.tags.add(TPE1(text = composer))
+	audio.tags.add(TAL(text = album))
 
 	audio.save()
 
@@ -122,12 +121,18 @@ def get_song(info):
 		sys.stdout.flush()
 		# urllib.request.urlretrieve(music_link, fname.encode('utf-8'))
 		md = requests.get(music_link, headers=headers).content
-		with open(fname.encode('utf-8'), 'wb') as f:
+		fname_encode = fname.encode('utf-8')
+		if os.path.exists(fname_encode) and ignore_exist == True:
+			print('ignore exist file' % fname_encode)
+			return None
+		with open(fname_encode, 'wb') as f:
 			f.write(md)
-		print('downloading %s complete' % fname.encode('utf-8'))
+		print('downloading %s complete' % fname_encode)
 	except Exception as e:
 		print('Unexpected error:', e)
 		raise
-	return fname.encode('utf-8')
+	return fname_encode
 
+if len(sys.argv) > 2:
+	ignore_exist = sys.argv[2] == "1"
 get_page(sys.argv[1])
