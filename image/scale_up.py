@@ -1,3 +1,5 @@
+# script for large image resize
+
 from PIL import Image
 import os,sys
 
