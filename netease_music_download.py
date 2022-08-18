@@ -9,7 +9,7 @@ import os
 import urllib
 import sys
 import time
-from mutagen.id3 import ID3, APIC, error, TPE1, TAL
+from mutagen.id3 import ID3, APIC, error, TPE1, TAL, TRCK, NumericPartTextFrame
 from mutagen.mp3 import MP3
 
 headers = {
@@ -24,115 +24,120 @@ domain = 'https://music.163.com'
 ignore_exist = False
 
 def get_page(url):
-	if '#' in url:
-		url=url.replace('#/', '')
-		print('url changed to %s' % url)
+    if '#' in url:
+        url=url.replace('#/', '')
+        print('url changed to %s' % url)
 
-	if '/my/m/music' in url:
-		url=url.replace('/my/m/music', '')
-		print('url changed to %s' % url)
+    if '/my/m/music' in url:
+        url=url.replace('/my/m/music', '')
+        print('url changed to %s' % url)
 
-	is_playlist=bool('playlist' in url or 'album' in url)
+    is_playlist=bool('playlist' in url or 'album' in url)
 
-	if is_playlist:
-		res = requests.get(url, headers=headers)
-		data = re.findall(r'\<li\>\<a href=\"\/song\?id=.*?\<\/a\>\<\/li\>', res.text)
-		# song_url_list = re.findall(r'\/song\?id=.*?\<\/a\>',res.text)
-		print('analyzing and downloading playlist, please wait...')
-		assert(len(data)>=1)
-		for n in data:
-			start = 13
-			end = n.find("\"", 13)
-			song_url = n[start:end]
-			need_sleep = get_song_single(domain + song_url) == 1
-			sys.stdout.flush()
-			if n is not data[len(data)-1] and need_sleep:
-				print('sleep 3 secs...')
-				sys.stdout.flush()
-				time.sleep(3.0)
-	else:
-		get_song_single(url)
+    if is_playlist:
+        res = requests.get(url, headers=headers)
+        data = re.findall(r'\<li\>\<a href=\"\/song\?id=.*?\<\/a\>\<\/li\>', res.text)
+        # song_url_list = re.findall(r'\/song\?id=.*?\<\/a\>',res.text)
+        print('analyzing and downloading playlist, please wait...')
+        assert(len(data)>=1)
+        track_idx = 1
+        for n in data:
+            start = 13
+            end = n.find("\"", 13)
+            song_url = n[start:end]
+            need_sleep = get_song_single(domain + song_url, '%s/%s' % (track_idx, len(data)))
+            sys.stdout.flush()
+            if n is not data[len(data)-1] and need_sleep:
+                print('sleep 3 secs...')
+                sys.stdout.flush()
+                time.sleep(3.0)
+            track_idx+=1
+    else:
+        get_song_single(url)
 
-def get_song_single(url):
-	# open page
-	ff=urllib.request.urlopen(url)
-	page=ff.read()
-	# find title related info
-	data=re.findall(r'\<title\>.*\<\/title\>',page.decode())
-	splited = data[0].split('-')
-	sep=[m.start() for m in re.finditer(' - ',data[0])]
-	composer = splited[1]
-	song_title=data[0][7:sep[0]]
-	# find album info
-	album_raw = re.findall(r'\<meta property="og:music:album".*\>', page.decode())
-	# <meta property="og:music:album" content="Snö">
-	album = album_raw
-	if len(album_raw) < 1:
-		print("fail to find album")
-	else:
-		equal_char_idx = album_raw[0].rfind('=')
-		album = album_raw[0][equal_char_idx+2:-3]
-		# print(album_raw[0][equal_char_idx+2:-3].encode('utf-8'))
-	coverdom = re.findall(r'class=\"j-img\".*\>', page.decode())[0]
-	cover = coverdom[coverdom.find('data-src=')+10:-2]
-	# print(cover)
+def get_song_single(url, track = None):
+    # open page
+    ff=urllib.request.urlopen(url)
+    page=ff.read()
+    # find title related info
+    data=re.findall(r'\<title\>.*\<\/title\>',page.decode())
+    splited = data[0].split('-')
+    sep=[m.start() for m in re.finditer(' - ',data[0])]
+    composer = splited[1]
+    song_title=data[0][7:sep[0]]
+    # find album info
+    album_raw = re.findall(r'\<meta property="og:music:album".*\>', page.decode())
+    # <meta property="og:music:album" content="Snö">
+    album = album_raw
+    if len(album_raw) < 1:
+        print("fail to find album")
+    else:
+        equal_char_idx = album_raw[0].rfind('=')
+        album = album_raw[0][equal_char_idx+2:-3]
+        # print(album_raw[0][equal_char_idx+2:-3].encode('utf-8'))
+    coverdom = re.findall(r'class=\"j-img\".*\>', page.decode())[0]
+    cover = coverdom[coverdom.find('data-src=')+10:-2]
+    # print(cover)
 
-	id=url[url.find('id=')+3:]
-	f = get_song((id,song_title))
-	if f == None:
-		return 0
-	get_cover(f, cover, composer, album)
-	return 1
+    id=url[url.find('id=')+3:]
+    f = get_song((id,song_title))
+    if f == None:
+        return 0
+    get_cover(f, cover, composer, album, track)
+    return 1
 
-def get_cover(path, cover_path, composer, album):
-	audio = MP3(path, ID3=ID3)
-	print('try getting cover image from' ,cover_path)
-	img = None
-	try:
-		img = requests.get(cover_path, headers=headers).content
-		# img = requests.get(cover_path, headers=headers).content
-	except error:
-		print(error)
-		return
-	
-	if audio.tags == None:
-		audio.add_tags()
-	audio.tags.add(
-		APIC(
-			encoding=3,
-			mime='image/jpeg',
-			type=3,
-			desc=u'Cover',
-			data=img,
-		)
-	)
-	audio.tags.add(TPE1(text = composer))
-	audio.tags.add(TAL(text = album))
+def get_cover(path, cover_path, composer, album, track):
+    audio = MP3(path, ID3=ID3)
+    print('try getting cover image from' ,cover_path)
+    img = None
+    try:
+        img = requests.get(cover_path, headers=headers).content
+        # img = requests.get(cover_path, headers=headers).content
+    except error:
+        print(error)
+        return
+    
+    if audio.tags == None:
+        audio.add_tags()
+    audio.tags.add(
+        APIC(
+            encoding=3,
+            mime='image/jpeg',
+            type=3,
+            desc=u'Cover',
+            data=img,
+        )
+    )
+    audio.tags.add(TPE1(text = composer))
+    audio.tags.add(TAL(text = album))
+    if track:
+        audio.tags.add(TRCK(text = track))
+        print("adding track %s" % track)
 
-	audio.save()
+    audio.save()
 
 def get_song(info):
-	song_url = url+str(info[0])
-	try:
-		req = requests.get(song_url, headers=headers, allow_redirects=False)
-		music_link=req.headers['Location']
-		fname=(str(info[1])+'.mp3').replace('/','_').replace(':',' ').replace('*', '')
-		print('downloading %s \n => %s start' % (music_link,fname.encode('utf-8')))
-		sys.stdout.flush()
-		# urllib.request.urlretrieve(music_link, fname.encode('utf-8'))
-		md = requests.get(music_link, headers=headers).content
-		fname_encode = fname.encode('utf-8')
-		if os.path.exists(fname_encode) and ignore_exist == True:
-			print('ignore exist file' % fname_encode)
-			return None
-		with open(fname_encode, 'wb') as f:
-			f.write(md)
-		print('downloading %s complete' % fname_encode)
-	except Exception as e:
-		print('Unexpected error:', e)
-		raise
-	return fname_encode
+    song_url = url+str(info[0])
+    try:
+        req = requests.get(song_url, headers=headers, allow_redirects=False)
+        music_link=req.headers['Location']
+        fname=(str(info[1])+'.mp3').replace('/','_').replace(':',' ').replace('*', '')
+        print('downloading %s \n => %s start' % (music_link,fname.encode('utf-8')))
+        sys.stdout.flush()
+        # urllib.request.urlretrieve(music_link, fname.encode('utf-8'))
+        md = requests.get(music_link, headers=headers).content
+        fname_encode = fname.encode('utf-8')
+        if os.path.exists(fname_encode) and ignore_exist == True:
+            print('ignore exist file' % fname_encode)
+            return None
+        with open(fname_encode, 'wb') as f:
+            f.write(md)
+        print('downloading %s complete' % fname_encode)
+    except Exception as e:
+        print('Unexpected error:', e)
+        raise
+    return fname_encode
 
 if len(sys.argv) > 2:
-	ignore_exist = sys.argv[2] == "1"
+    ignore_exist = sys.argv[2] == "1"
 get_page(sys.argv[1])
