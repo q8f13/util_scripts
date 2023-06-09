@@ -45,7 +45,13 @@ def get_page(url):
             start = 13
             end = n.find("\"", 13)
             song_url = n[start:end]
-            need_sleep = get_song_single(domain + song_url, '%s/%s' % (track_idx, len(data)))
+            need_sleep = 1;
+            try:
+                need_sleep = get_song_single(domain + song_url, '%s/%s' % (track_idx, len(data)))
+            except:
+                print('exception occured retrieveing track %s, ignored for now' % track_idx)
+                track_idx+=1
+                continue;
             sys.stdout.flush()
             if n is not data[len(data)-1] and need_sleep:
                 print('sleep 3 secs...')
@@ -61,7 +67,7 @@ def get_song_single(url, track = None):
     page=ff.read()
     # find title related info
     data=re.findall(r'\<title\>.*\<\/title\>',page.decode())
-    splited = data[0].split('-')
+    splited = data[0].split(' - ')
     sep=[m.start() for m in re.finditer(' - ',data[0])]
     composer = splited[1]
     song_title=data[0][7:sep[0]]
@@ -88,7 +94,7 @@ def get_song_single(url, track = None):
 
 def get_cover(path, cover_path, composer, album, track):
     audio = MP3(path, ID3=ID3)
-    print('try getting cover image from' ,cover_path)
+    print('try getting cover image from %s' % cover_path)
     img = None
     try:
         img = requests.get(cover_path, headers=headers).content
@@ -122,14 +128,14 @@ def get_song(info):
         req = requests.get(song_url, headers=headers, allow_redirects=False)
         music_link=req.headers['Location']
         fname=(str(info[1])+'.mp3').replace('/','_').replace(':',' ').replace('*', '')
+        fname_encode = fname.encode('utf-8')
+        if os.path.exists(fname_encode) and ignore_exist == True:
+            print('ignore exist file %s' % fname_encode)
+            return None
         print('downloading %s \n => %s start' % (music_link,fname.encode('utf-8')))
         sys.stdout.flush()
         # urllib.request.urlretrieve(music_link, fname.encode('utf-8'))
         md = requests.get(music_link, headers=headers).content
-        fname_encode = fname.encode('utf-8')
-        if os.path.exists(fname_encode) and ignore_exist == True:
-            print('ignore exist file' % fname_encode)
-            return None
         with open(fname_encode, 'wb') as f:
             f.write(md)
         print('downloading %s complete' % fname_encode)
