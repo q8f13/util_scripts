@@ -89,7 +89,12 @@ def get_song_single(url, track = None):
     f = get_song((id,song_title))
     if f == None:
         return 0
-    get_cover(f, cover, composer, album, track)
+    try:
+        get_cover(f, cover, composer, album, track)
+    except:
+        print("err when downloading song, maybe behind paywall, delete invalid song file...")
+        os.remove(f)
+        return 1
     return 1
 
 def get_cover(path, cover_path, composer, album, track):
