@@ -2,6 +2,8 @@
 # download music from netease music
 # 2020.8.3
 
+# if encounting any issue, try update 'cookie' in headers
+
 import requests
 import re
 import os
@@ -14,14 +16,14 @@ from mutagen.mp3 import MP3
 
 headers = {
     "Referer": "https://music.163.com/",
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:85.0) Gecko/20100101 Firefox/85.0",
-    "cookie":"JSESSIONID-WYYY=nv52rIU1mKfcCqo4BolbYnpTafJQZAN4ShhsWONCo%2BQkN2PB%2BFociJO%2B5z6rk%2F6khQzGwKQ%2FuZoehQCbmq0hrujVA3%2FHhqGQTHowfDW%2BayzD3aosjRPDspb8XOK6G%2Bc0BF%2FDg%2FY5DvumzS3sBAxQQSwIr%2BXvpXmoVY%5C3kfO1Sd7eYa%5CO%3A1614018916873; _iuqxldmzr_=32; _ntes_nnid=7d3f3ed20696adb697c39b8903f96390,1605021655445; _ntes_nuid=7d3f3ed20696adb697c39b8903f96390; NMTID=00Ovf-h0EG_gz5WkEtYm_oIIJc_UHsAAAF1sr7a3g; WM_NI=nV%2FZXWReA29bvSD7Tpwl3OycrTgbOAJaV4bXwby7lTgZTgdHr%2BzEH%2FWAOISvikwM1J%2Bfz5dZYaBgdZT86Oxx2SPAe0jqHeCu11qAP0wMDeX6nosn%2FcKUN33xgd%2FE5yoba2Q%3D; WM_NIKE=9ca17ae2e6ffcda170e2e6ee9bbc63b2aa9899d53df69a8ab3c85a878e8fafae48b298acd8e26294e9a592e52af0fea7c3b92aae8ae1bbdb5d92bb8fd3bc6ab68d8cd8d77cb5b4fdb0fc69b28ca983ce4b8abf9ad5e154b5beb7d8ef60a5869c88e744b2f5b6a6cb25959f81aad27eabb5b9aeb442e9bab6d6e7529bbf8e88e75298e8fab0fb74f28da0a2e83caaaf8886c27ff3efbfa2d33cb5938c86db3eaeb1bd8fae69898b82d4b274a5bce1a6b873adbeafd3d437e2a3; WM_TID=sar%2Bllvyx4ZBVAFAUQd6d8oNj%2Fy3up7f; vinfo_n_f_l_n3=c69711b737e54c81.1.0.1612586030597.0.1612586053202; WEVNSM=1.0.0; WNMCID=gdfxnu.1605021655686.01.0; ne_analysis_trace_id=1612586030596; s_n_f_l_n3=c69711b737e54c811612586030598; MUSIC_U=0dbf635a4ff000ed0b256b841d6d2b4bfec295b63cdb5f100d4224d83774975eb8e3faaeac2dfde5c3061cd18d77b7a0; __remember_me=true; __csrf=7c33478149932f83200d9f4ca261d599"
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:145.0) Gecko/20100101 Firefox/145.0",
+    "cookie":"_ntes_nnid=5cd17590f4e9046d9b337bdf41081767,1753761830051; _ntes_nuid=5cd17590f4e9046d9b337bdf41081767; NMTID=00O5puBeRnZGVLV8kOKiHIzPW7IwEUAAAGYVFnQIg; WNMCID=kyredy.1753761830351.01.0; NTES_P_UTID=k98kqHLUXerNJZn0mlZejIEsPp0hur1G|1777261103; MUSIC_U=004CB89896118F9C351FD0F3AD5078129126A40A998524F88C6D57D74216A8CF98C6538510EC0F998EB7D0F34D2B2DAE65CC0995D979BB6169A87569372D7BE4E503E72DDB07637D217744BB4F329B0A652A0521559AEA8F60496FD0ACB23EC7DF38B66ADF5EF739A35B1832287754D9293CEEADEA29FBBB738F00680FB27F0A631D65AA3D5A2CDC2A218E5286F5AE8D44D9BC2FDBD7F3EA0BE4CD7A459DC46A7CFA3378FAF4F92D368D72C02DD0B477C46F8E362775169F05A6A03B9B9E07FCBE74A3EA7BABED5FA3818CA8E14743CC26B3629B444CF12EE056ED070B390E446900622FE1044BBD53B41F98464D3549BA6C4486B362125ECFDDF918073578CA60F843ED14F9156D2DF9A8DF1E34BC51A6211B79C9683B1EBBE0947C631D4E50DAE418DF98DC4DD5453FDE71FB2CD99274F32E156917E5077DD7237CEC54305D1C2A11996FEF54D16DCEAEEED3E4B55480FF73A1B5593CFF1955C9B3FA0AD86B266FDE9A2BBCEC69AFEF73AB004A1B4FDA; __remember_me=true; ntes_kaola_ad=1; __csrf=4c5cb95aa8239865284daa834b6f589b; JSESSIONID-WYYY=WJgWxtZ5UpmBnsgSd6xNvCzq%2FUvRbE2SowakXtqhGlemKlNmoT0qmhXqorGBY5BioQVZmIf5z0dvV3%5C6zJA4NZlPSYbrq1zdSTPdTRFrG%2BZ6sIH4SkKxRz7HCWKHszB%2F0boye%2B2%2F4o4e47YuUuHWY6Za43Fm26OFxCF%5CkGo4w7V4S%5C8I%3A1777264619877; _iuqxldmzr_=32; WEVNSM=1.0.0; NTES_SESS=PDbb2DidBM8z5ByiCGsZrTtP6W2woLYfRwMwuaxdTtW4VQXFV_orx5MkyihM9pweDNOfVNYtLTjmLudGWTKucg3cTdU6wm_Nz3fYroJZyImyBB9Y1C1Ai5C_B9IEnQsv77556WQ_Ziknleuxyl.zoja2I37mEafUp6txuGcuKlv32qtRGYIqml.McmG72GqGZRlQ9igh7WSK5; S_INFO=1777261103|0|3&80##|spiritswithin; P_INFO=spiritswithin@163.com|1777261103|0|music|11&19|bej&1773111541&music#bej&null#10#0#0|&0||spiritswithin@163.com"
 }
 
 url = 'https://music.163.com/song/media/outer/url?id='
 domain = 'https://music.163.com'
 
-ignore_exist = False
+ignore_exist = True
 
 def get_page(url):
     if '#' in url:
@@ -38,8 +40,8 @@ def get_page(url):
         res = requests.get(url, headers=headers)
         data = re.findall(r'\<li\>\<a href=\"\/song\?id=.*?\<\/a\>\<\/li\>', res.text)
         # song_url_list = re.findall(r'\/song\?id=.*?\<\/a\>',res.text)
-        print('analyzing and downloading playlist, please wait...')
         assert(len(data)>=1)
+        print('analyzing and downloading playlist, count: %s, please wait...' % len(data))
         track_idx = 1
         for n in data:
             start = 13
@@ -54,9 +56,9 @@ def get_page(url):
                 continue;
             sys.stdout.flush()
             if n is not data[len(data)-1] and need_sleep:
-                print('sleep 3 secs...')
+                print('sleep 1 secs...')
                 sys.stdout.flush()
-                time.sleep(3.0)
+                time.sleep(1.0)
             track_idx+=1
     else:
         get_song_single(url)
