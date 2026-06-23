@@ -1,5 +1,5 @@
 mutagen==1.45.1
-requests==2.24.0
+requests==2.31.0
 image_slicer==2.1.1
 # Pillow==8.1.2
 # Pillow==7.2.0
